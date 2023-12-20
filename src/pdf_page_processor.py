@@ -4,7 +4,7 @@ import numpy as np
 import os
 import fitz  # PyMuPDF
 from sklearn.cluster import KMeans
-from pdf_image_extractor import PDFImageExtractor
+from .pdf_image_extractor import PDFImageExtractor
 
 class Page:
     def __init__(self, page_num: int, image: PDFImageExtractor):
@@ -36,10 +36,9 @@ class Page:
         # Закрыть PDF файл        
         doc.close()
     
-    def extract_text_from_images(self, custom_config=r'--oem 3 --psm 6'):
+    def extract_text_from_images(self, custom_config=r'--oem 3 --psm 6 -c preserve_interword_spaces=1'):
         extracted_text_path = os.path.join(self.image.images_folder, f'{self.page_num}_text.txt')
-        with open(extracted_text_path, 'w', encoding='utf-8') as text_file:
-            end_page = end_page or len(os.listdir(self.image.images_folder))            
+        with open(extracted_text_path, 'w', encoding='utf-8') as text_file:                     
             img_path = os.path.join(self.image.images_folder, f'page_{self.page_num}_processed.png')
             if os.path.exists(img_path):
                 # Адаптивная пороговая обработка и удаление "клякс"
