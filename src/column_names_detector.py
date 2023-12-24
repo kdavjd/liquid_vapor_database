@@ -117,9 +117,7 @@ class ColumnLineDetector:
     def detect_column_names_area(self):
         horizontal_lines = self.find_horizontal_lines(self.img_width / 20)
         combined_lines = self.combine_lines(horizontal_lines, self.img_height / 100)
-        filtered_lines = self.filter_lines_by_width(combined_lines, self.img_width / 5)
-
-        # Использование self.ocr_df напрямую вместо передачи в качестве аргумента
+        filtered_lines = self.filter_lines_by_width(combined_lines, self.img_width / 5)        
         text_filtered_lines = self.filter_lines_crossing_text(filtered_lines)
 
         if self.debug:
