@@ -1,16 +1,14 @@
 import cv2
 import numpy as np
-import pytesseract
-import matplotlib.pyplot as plt
-import csv
+import pandas as pd
 
 class ColumnLineDetector:
-    def __init__(self, img_path, ocr_data, debug=False):
+    def __init__(self, img_path, ocr_df, debug=False):
         self.img_path = img_path
         self.debug = debug
         self.img = cv2.imread(img_path)
         self.img_height, self.img_width = self.img.shape[:2]
-        self.ocr_data = ocr_data
+        self.ocr_df = ocr_df
 
     def line_intersects_rect(self, line, rect):        
         rx, ry, rw, rh = rect
@@ -54,22 +52,29 @@ class ColumnLineDetector:
 
         return in_segment1 and in_segment2
 
-    def filter_lines_crossing_text(self, lines, ocr_data, threshold=1):
+    def filter_lines_crossing_text(self, lines):
         filtered_lines = []
         for line in lines:
             intersect_count = 0
             line_coords = (line[0], line[1], line[2], line[3])
 
-            for i in range(len(ocr_data['text'])):
-                if int(ocr_data['conf'][i]) > 60:
-                    rect_coords = (ocr_data['left'][i], ocr_data['top'][i], ocr_data['width'][i], ocr_data['height'][i])
+            for index, row in self.ocr_df.iterrows():
+                if row['conf'] > 0:
+                    rect_coords = self.get_rect_from_bbox(row['bbox'])
                     if self.line_intersects_rect(line_coords, rect_coords):
                         intersect_count += 1
 
-            if intersect_count <= threshold:
+            if intersect_count <= 1:  # Вы можете изменить порог в зависимости от потребностей
                 filtered_lines.append(line)
 
         return filtered_lines
+
+    def get_rect_from_bbox(self, bbox):
+        # Преобразует bbox из формата [[x1, y1], [x2, y2], ...] в (x, y, width, height)
+        x_coordinates, y_coordinates = zip(*bbox)
+        x1, y1 = min(x_coordinates), min(y_coordinates)
+        width, height = max(x_coordinates) - x1, max(y_coordinates) - y1
+        return (x1, y1, width, height)
     
     def find_horizontal_lines(self, min_width):
         gray = cv2.cvtColor(self.img, cv2.COLOR_BGR2GRAY)
@@ -110,18 +115,17 @@ class ColumnLineDetector:
         return [line for line in lines if line[2] - line[0] >= min_width]
 
     def detect_column_names_area(self):
-        horizontal_lines = self.find_horizontal_lines(self.img_width / 10)
+        horizontal_lines = self.find_horizontal_lines(self.img_width / 20)
         combined_lines = self.combine_lines(horizontal_lines, self.img_height / 100)
-        filtered_lines = self.filter_lines_by_width(combined_lines, self.img_width / 3)
+        filtered_lines = self.filter_lines_by_width(combined_lines, self.img_width / 5)
 
-        # Применяем новый фильтр для исключения линий, пересекающих текст
-        text_filtered_lines = self.filter_lines_crossing_text(filtered_lines, self.ocr_data, threshold=1)
+        # Использование self.ocr_df напрямую вместо передачи в качестве аргумента
+        text_filtered_lines = self.filter_lines_crossing_text(filtered_lines)
 
         if self.debug:
             for line in text_filtered_lines:
                 x1, y1, x2, y2 = line
                 cv2.line(self.img, (x1, y1), (x2, y2), (0, 0, 255), 2)
-
             cv2.imwrite('debug_column_names_area.png', self.img)
 
         return text_filtered_lines
