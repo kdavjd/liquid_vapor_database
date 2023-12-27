@@ -1,6 +1,8 @@
 import cv2
 import numpy as np
 import pandas as pd
+from .logger_config import logger
+
 
 class ColumnLineDetector:
     def __init__(self, img_path, ocr_df, debug=False):
@@ -20,9 +22,9 @@ class ColumnLineDetector:
 
         # Проверка пересечения с каждой стороной прямоугольника
         return self.line_intersects_line(line, left_line) or \
-               self.line_intersects_line(line, right_line) or \
-               self.line_intersects_line(line, top_line) or \
-               self.line_intersects_line(line, bottom_line)
+            self.line_intersects_line(line, right_line) or \
+            self.line_intersects_line(line, top_line) or \
+            self.line_intersects_line(line, bottom_line)
 
     def line_intersects_line(self, line1, line2): 
         def to_homog(point):

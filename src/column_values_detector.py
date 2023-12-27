@@ -1,6 +1,5 @@
 import cv2
 import numpy as np
-import pytesseract
 import matplotlib.pyplot as plt
 import csv
 
@@ -55,6 +54,7 @@ class ColumnValuesDetector:
         return in_segment1 and in_segment2
 
     def filter_lines_crossing_text(self, lines, ocr_data, threshold=1):
+        
         filtered_lines = []
         for line in lines:
             intersect_count = 0
