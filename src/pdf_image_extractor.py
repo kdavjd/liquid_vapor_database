@@ -6,11 +6,9 @@ import fitz  # PyMuPDF
 from sklearn.cluster import KMeans
 
 class PDFImageExtractor:
-    def __init__(self, pdf_path, tesseract_path, images_folder='extracted_images'):
-        self.pdf_path = pdf_path
-        self.tesseract_path = tesseract_path
-        self.images_folder = images_folder
-        pytesseract.pytesseract.tesseract_cmd = tesseract_path
+    def __init__(self, pdf_path, images_folder='extracted_images'):
+        self.pdf_path = pdf_path        
+        self.images_folder = images_folder        
         os.makedirs(images_folder, exist_ok=True)
 
     def isolate_dark_shades(self, image_path, dark_shades_count=2):

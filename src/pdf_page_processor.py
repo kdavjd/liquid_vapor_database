@@ -11,7 +11,7 @@ class Page:
         self.page_num = page_num
         self.image = image
         self.extract_images_from_pdf()
-        self.extract_text_from_images()
+        #self.extract_text_from_images()
         
     
     def extract_images_from_pdf(self, scaling_factor=5):
