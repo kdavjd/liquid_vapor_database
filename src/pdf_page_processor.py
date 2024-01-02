@@ -6,7 +6,7 @@ import fitz  # PyMuPDF
 from sklearn.cluster import KMeans
 from .pdf_image_extractor import PDFImageExtractor
 
-class Page:
+class PageImage:
     def __init__(self, page_num: int, image: PDFImageExtractor):
         self.page_num = page_num
         self.image = image
