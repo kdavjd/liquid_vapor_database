@@ -31,6 +31,18 @@ class PageData():
         scaled_y = scale_y * (center_y - self.min_y) / (self.max_y - self.min_y)
         return scaled_x, scaled_y
     
+    def unscale_width_position(self, start_scaled_x, end_scaled_x):
+        pixel_per_unit_x = (self.max_x - self.min_x) / (self.best_scale_x)
+        start_pixel_x = self.min_x + start_scaled_x * pixel_per_unit_x
+        end_pixel_x = self.min_x + end_scaled_x * pixel_per_unit_x
+        return int(start_pixel_x), int(end_pixel_x)
+
+    def unscale_height_position(self, start_scaled_y, end_scaled_y):
+        pixel_per_unit_y = (self.max_y - self.min_y) / (self.best_scale_y)
+        start_pixel_y = self.min_y + start_scaled_y * pixel_per_unit_y
+        end_pixel_y = self.min_y + end_scaled_y * pixel_per_unit_y
+        return int(start_pixel_y), int(end_pixel_y)
+    
     def optimize_scale_factors(self):
         def objective(scale_factors):
             scale_x, scale_y = map(int, scale_factors)
@@ -68,17 +80,32 @@ class PageData():
         
         return pd.DataFrame(heatmap_data)
     
-    def process_df(self):
-        best_scale_x, best_scale_y = self.optimize_scale_factors()
-        heatmap_df = self.apply_scale_and_create_heatmap(best_scale_x, best_scale_y)
+    def process_df(self):        
+        self.best_scale_x, self.best_scale_y = self.optimize_scale_factors()
+        heatmap_df = self.apply_scale_and_create_heatmap(self.best_scale_x, self.best_scale_y)        
+        
         heatmap_df['region'] = heatmap_df.apply(self.identify_table_region, axis=1)
+        heatmap_df['prev_region'] = heatmap_df['region'].shift(1, fill_value='metadata')
+        heatmap_df['next_region'] = heatmap_df['region'].shift(-1, fill_value='metadata')        
+        
+        def update_region(row):
+            if row['region'] == 'value' and row['prev_region'] != 'value' and row['next_region'] != 'value':
+                return 'metadata'
+            elif row['region'] == 'metadata' and row['prev_region'] != 'metadata' and row['next_region'] != 'metadata':
+                return 'value'
+            return row['region']
+        
+        heatmap_df['region'] = heatmap_df.apply(update_region, axis=1)
+        
+        # Назначение номеров таблиц
         heatmap_df['table_number'] = self.assign_table_numbers(heatmap_df['region'])
+        
         return heatmap_df
 
     @staticmethod
     def identify_table_region(row):
         string_row = [' '.join(map(str, cell)) if isinstance(cell, list) else str(cell) for cell in row]
-        float_count = sum([1 for cell in string_row if PageDataFrame.is_convertible_to_float(cell)])
+        float_count = sum([1 for cell in string_row if PageData.is_convertible_to_float(cell)])
         return 'value' if float_count >= 2 else 'metadata'
 
     @staticmethod
