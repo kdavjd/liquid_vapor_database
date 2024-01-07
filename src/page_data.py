@@ -80,11 +80,52 @@ class PageData():
         
         return pd.DataFrame(heatmap_data)
     
+    def reassign_regions(self, heatmap_df):
+        empty_indices = []  # Индексы всех пустых рядов
+        transition_indices = []  # Индексы переходов от 'value' к 'metadata'
+        current_empty_series = []  # Текущая серия пустых 'metadata' рядов
+        series_to_reassign = []  # Список серий для переназначения
+
+        for idx, row in heatmap_df.iterrows():
+            # Определение пустой строки
+            row_values = [' '.join(map(str, cell)) if isinstance(cell, list) else str(cell) for cell in row[:-1]]
+            is_empty = all(value == "" for value in row_values)
+
+            if is_empty:
+                empty_indices.append(idx)
+
+            if row['region'] == 'metadata':
+                if is_empty:
+                    # Если текущая строка- пустая 'metadata', добавляем в текущую серию
+                    current_empty_series.append(idx)
+                else:
+                    # Если серия пустых 'metadata' закончилась, сохраняем ее и сбрасываем
+                    if current_empty_series:
+                        series_to_reassign.append(current_empty_series)
+                        current_empty_series = []
+            elif row['region'] == 'value' and current_empty_series:
+                # Если мы нашли 'value' после пустых 'metadata', значит это переход
+                transition_indices.append(current_empty_series[0] - 1)  # Предполагаем, что строка перед серией - 'value'
+                current_empty_series = []
+
+        # Обработка последней серии в df
+        if current_empty_series:
+            series_to_reassign.append(current_empty_series)
+
+        # Переназначение половины индексов в каждой серии
+        for series in series_to_reassign:
+            mid_point = len(series) // 2
+            for idx in series[:mid_point]:
+                heatmap_df.at[idx, 'region'] = 'value'
+
+        return heatmap_df
+    
     def process_df(self):        
         self.best_scale_x, self.best_scale_y = self.optimize_scale_factors()
         heatmap_df = self.apply_scale_and_create_heatmap(self.best_scale_x, self.best_scale_y)        
         
         heatmap_df['region'] = heatmap_df.apply(self.identify_table_region, axis=1)
+        heatmap_df = self.reassign_regions(heatmap_df)
         heatmap_df['prev_region'] = heatmap_df['region'].shift(1, fill_value='metadata')
         heatmap_df['next_region'] = heatmap_df['region'].shift(-1, fill_value='metadata')        
         

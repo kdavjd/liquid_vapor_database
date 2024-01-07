@@ -15,19 +15,15 @@ class TestRegionSequence(unittest.TestCase):
         self.data = [pd.read_csv(os.path.join(assets_path, file)) 
                      for file in os.listdir(assets_path) if file.endswith('.csv')]
 
-    def test_metadata_starts_first(self):
-        # Перебор каждого DataFrame в списке и выполнение теста
+    def test_metadata_starts_first(self):        
         for df in self.data:
             # Проверка, что первое значение в столбце 'region' равно 'metadata'
             self.assertEqual(
                 df['region'].iloc[0], 'metadata', "Столбец 'region' должен начинаться с 'metadata'")
 
-    def test_no_single_values_in_region(self):
-        # Перебор каждого DataFrame в списке и выполнение теста
+    def test_no_single_values_in_region(self):        
         for df in self.data:
-            regions = df['region'].tolist()  # Список значений столбца 'region'
-
-            # Перебор списка 'regions', исключая первый и последний элементы
+            regions = df['region'].tolist()            
             for i in range(1, len(regions) - 1):
                 # Проверка, что текущее значение равно предыдущему или следующему
                 if regions[i] != regions[i - 1] and regions[i] != regions[i + 1]:
